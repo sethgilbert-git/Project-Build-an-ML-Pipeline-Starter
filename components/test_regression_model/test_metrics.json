@@ -1,0 +1,11 @@
+{
+  "mae": 33.84170143129229,
+  "r2": 0.5622894177757,
+  "validation_mae": 34.246057899226734,
+  "relative_mae_gap": 0.011807387265544849,
+  "comparable": true,
+  "relative_tolerance": 0.15,
+  "test_rows": 3801,
+  "model_version": "random_forest_export:prod",
+  "test_version": "test_data.csv:latest"
+}

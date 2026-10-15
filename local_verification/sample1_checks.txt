@@ -1,0 +1,16 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.4.2, pluggy-1.6.0 -- /tmp/nyc-verify-env/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/scratch/5b135705cdd9/nyc_airbnb_project
+configfile: pytest.ini
+plugins: hydra-core-1.3.2, anyio-4.15.1, platformdirs-4.13.0
+collecting ... collected 6 items
+
+src/data_check/test_data.py::test_column_names PASSED                    [ 16%]
+src/data_check/test_data.py::test_neighborhood_names PASSED              [ 33%]
+src/data_check/test_data.py::test_proper_boundaries PASSED               [ 50%]
+src/data_check/test_data.py::test_similar_neigh_distrib PASSED           [ 66%]
+src/data_check/test_data.py::test_row_count PASSED                       [ 83%]
+src/data_check/test_data.py::test_price_range PASSED                     [100%]
+
+============================== 6 passed in 0.46s ===============================

@@ -1,0 +1,46 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-8.4.2, pluggy-1.6.0 -- /tmp/nyc-verify-env/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/scratch/5b135705cdd9/nyc_airbnb_project
+configfile: pytest.ini
+plugins: hydra-core-1.3.2, anyio-4.15.1, platformdirs-4.13.0
+collecting ... collected 8 items
+
+tests/test_pipeline.py::test_cleaning_keeps_inclusive_price_limits PASSED [ 12%]
+tests/test_pipeline.py::test_cleaning_cli_types PASSED                   [ 25%]
+tests/test_pipeline.py::test_required_preprocessing_and_model_steps PASSED [ 37%]
+tests/test_pipeline.py::test_review_reference_date_is_training_fitted PASSED [ 50%]
+tests/test_pipeline.py::test_orchestrator_uses_configured_parameters PASSED [ 62%]
+tests/test_pipeline.py::test_production_test_is_explicit PASSED          [ 75%]
+tests/test_pipeline.py::test_unknown_steps_fail_before_running PASSED    [ 87%]
+tests/test_pipeline.py::test_geographic_filter_removes_invalid_coordinates PASSED [100%]
+
+=============================== warnings summary ===============================
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:64
+  /tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:64: PyparsingDeprecationWarning: 'oneOf' deprecated - use 'one_of'
+    prop = Group((name + Suppress("=") + comma_separated(value)) | oneOf(_CONSTANTS))
+
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85
+  /tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+    parse = parser.parseString(pattern)
+
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89
+  /tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+    parser.resetCache()
+
+../../../../tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_mathtext.py:45
+  /tmp/nyc-verify-env/lib/python3.12/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+    ParserElement.enablePackrat()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 8 passed, 14 warnings in 3.09s ========================

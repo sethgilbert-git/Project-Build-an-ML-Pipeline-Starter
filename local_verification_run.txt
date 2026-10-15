@@ -1,0 +1,60 @@
+sample1: pytest exit 0
+sample2_before_fix: pytest exit 1
+sample2_after_fix: pytest exit 0
+{'max_depth': 10, 'n_estimators': 100, 'validation_mae': 34.50944659056026, 'validation_r2': 0.5440940552125724}
+{'max_depth': 10, 'n_estimators': 200, 'validation_mae': 34.40252617890473, 'validation_r2': 0.5464154998309152}
+{'max_depth': 50, 'n_estimators': 100, 'validation_mae': 34.33677140421044, 'validation_r2': 0.54909456603578}
+{'max_depth': 50, 'n_estimators': 200, 'validation_mae': 34.24605789922673, 'validation_r2': 0.550871823782618}
+/tmp/nyc-verify-env/lib/python3.12/site-packages/mlflow/types/utils.py:452: UserWarning: Hint: Inferred schema contains integer column(s). Integer columns in Python cannot represent missing values. If your input data contains missing values at inference time, it will be encoded as floats and will cause a schema enforcement error. The best way to avoid this problem is to infer the model schema based on a realistic data sample (training dataset) that includes missing values. Alternatively, you can declare integer columns as doubles (float64) whenever these columns may have missing values. See `Handling Integers With Missing Values <https://www.mlflow.org/docs/latest/models.html#handling-integers-with-missing-values>`_ for more details.
+  warnings.warn(
+{
+  "evidence_scope": "LOCAL ONLY; no W&B runs or GitHub releases are claimed",
+  "sample1_raw_rows": 20000,
+  "sample1_clean_rows": 19001,
+  "sample2_raw_rows": 48895,
+  "sample2_before_fix_rows": 46428,
+  "sample2_after_fix_rows": 46427,
+  "sample2_removed_geo_rows": 1,
+  "train_rows": 12160,
+  "validation_rows": 3040,
+  "test_rows": 3801,
+  "sweep": [
+    {
+      "max_depth": 10,
+      "n_estimators": 100,
+      "validation_mae": 34.50944659056026,
+      "validation_r2": 0.5440940552125724
+    },
+    {
+      "max_depth": 10,
+      "n_estimators": 200,
+      "validation_mae": 34.40252617890473,
+      "validation_r2": 0.5464154998309152
+    },
+    {
+      "max_depth": 50,
+      "n_estimators": 100,
+      "validation_mae": 34.33677140421044,
+      "validation_r2": 0.54909456603578
+    },
+    {
+      "max_depth": 50,
+      "n_estimators": 200,
+      "validation_mae": 34.24605789922673,
+      "validation_r2": 0.550871823782618
+    }
+  ],
+  "best_validation": {
+    "max_depth": 50,
+    "n_estimators": 200,
+    "validation_mae": 34.24605789922673,
+    "validation_r2": 0.550871823782618
+  },
+  "test_mae": 33.84170143129229,
+  "test_r2": 0.5622894177757,
+  "relative_mae_gap": 0.011807387265544644,
+  "comparable": true,
+  "mlflow_reload_predictions_match": true,
+  "inference_batch_invariance": true
+}
+Fixed sample2 training succeeded

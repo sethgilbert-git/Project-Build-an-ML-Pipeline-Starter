@@ -1,34 +1,43 @@
 name: basic_cleaning
 conda_env: conda.yml
-
 entry_points:
   main:
     parameters:
-
       input_artifact:
-        description: Ininital artifact to be cleaned
         type: string
-
+        description: input artifact
       output_artifact:
-        description: Output artifact for cleaned data
         type: string
-
+        description: output artifact
       output_type:
-        description: Type of the output dataset
         type: string
-
+        description: output type
       output_description:
-        description: Description of the output dataset
         type: string
-
+        description: output description
+      compatibility_artifact:
+        type: string
+        description: compatibility artifact
       min_price:
-        description: Minimum house price to be considered
         type: float
-
+        description: min price
       max_price:
-        description: Maximum house price to be considered
         type: float
-
-
-    command: >-
-        python run.py  --input_artifact {input_artifact}  --output_artifact {output_artifact}  --output_type {output_type}  --output_description {output_description}  --min_price {min_price}  --max_price {max_price} 
+        description: max price
+      min_longitude:
+        type: float
+        description: min longitude
+      max_longitude:
+        type: float
+        description: max longitude
+      min_latitude:
+        type: float
+        description: min latitude
+      max_latitude:
+        type: float
+        description: max latitude
+    command: python run.py --input_artifact {input_artifact} --output_artifact {output_artifact}
+      --output_type {output_type} --output_description {output_description} --compatibility_artifact
+      {compatibility_artifact} --min_price {min_price} --max_price {max_price} --min_longitude
+      {min_longitude} --max_longitude {max_longitude} --min_latitude {min_latitude}
+      --max_latitude {max_latitude}

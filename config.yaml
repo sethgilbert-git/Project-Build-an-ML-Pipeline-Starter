@@ -1,38 +1,50 @@
 main:
-  components_repository: "components"
-  # All the intermediate files will be copied to this directory at the end of the run.
-  # Set this to null if you are running in prod
+  components_repository: components
   project_name: nyc_airbnb
-  experiment_name: development
+  experiment_name: sample1
   steps: all
+  env_manager: local
 etl:
-  sample: "sample1.csv"
-  min_price: 10  # dollars
-  max_price: 350  # dollars
+  sample: sample1.csv
+  min_price: 10.0
+  max_price: 350.0
+  min_longitude: -74.25
+  max_longitude: -73.5
+  min_latitude: 40.5
+  max_latitude: 41.2
+artifacts:
+  raw_name: sample.csv
+  raw_type: raw_data
+  raw_description: Raw NYC Airbnb sample
+  raw_input: sample.csv:latest
+  clean_name: clean_sample.csv
+  clean_type: clean_sample
+  clean_description: Price-cleaned NYC Airbnb sample
+  clean_compatibility_name: clean_data.csv
+  clean_input: clean_sample.csv:latest
+  reference: clean_sample.csv:reference
+  trainval: trainval_data.csv:latest
+  test: test_data.csv:latest
+  model_name: random_forest_export
+  production_model: random_forest_export:prod
 data_check:
   kl_threshold: 0.2
 modeling:
-  # Fraction of data to use for test (the remaining will be used for train and validation)
   test_size: 0.2
-  # Fraction of remaining data to use for validation
   val_size: 0.2
-  # Fix this for reproducibility, change to have new splits
   random_seed: 42
-  # Column to use for stratification (use "none" for no stratification)
-  stratify_by: "neighbourhood_group"
-  # Maximum number of features to consider for the TFIDF applied to the title of the
-  # insertion (the column called "name")
+  stratify_by: neighbourhood_group
   max_tfidf_features: 5
-  # NOTE: you can put here any parameter that is accepted by the constructor of
-  # RandomForestRegressor. This is a subsample, but more could be added:
+  comparison_relative_tolerance: 0.15
   random_forest:
-    n_estimators: 100
-    max_depth: 15
+    n_estimators: 200
+    max_depth: 50
     min_samples_split: 4
     min_samples_leaf: 3
-    # Here -1 means all available cores
-    n_jobs: -1
+    n_jobs: 2
     criterion: squared_error
     max_features: 0.5
-    # DO not change the following
     oob_score: true
+hydra:
+  job:
+    chdir: false

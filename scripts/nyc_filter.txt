@@ -1,0 +1,5 @@
+    # NYC_FILTER_START: added in release 1.0.1 after sample2 fails its data check.
+    idx = (df["longitude"].between(min_longitude, max_longitude)
+           & df["latitude"].between(min_latitude, max_latitude))
+    df = df.loc[idx].copy()
+    # NYC_FILTER_END

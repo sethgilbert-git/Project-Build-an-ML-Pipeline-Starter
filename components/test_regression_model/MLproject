@@ -1,16 +1,16 @@
-name: test_model
+name: test_regression_model
 conda_env: conda.yml
-
 entry_points:
   main:
     parameters:
-
       mlflow_model:
-        description: An MLflow serialized model
         type: string
-
+        description: mlflow model
       test_dataset:
-        description: The test artifact
         type: string
-
-    command: "python run.py  --mlflow_model {mlflow_model} --test_dataset {test_dataset}"
+        description: test dataset
+      relative_tolerance:
+        type: float
+        description: relative tolerance
+    command: python run.py --mlflow_model {mlflow_model} --test_dataset {test_dataset}
+      --relative_tolerance {relative_tolerance}

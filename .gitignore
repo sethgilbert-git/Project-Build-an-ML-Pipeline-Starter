@@ -145,3 +145,8 @@ mlruns/
 outputs/
 random_forest_dir/
 multirun/
+
+# Reproducible local verification intermediates
+local_verification/*.csv
+local_verification/model_export/
+mlflow.db

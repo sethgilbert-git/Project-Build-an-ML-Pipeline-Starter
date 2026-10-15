@@ -1,46 +1,29 @@
-name: download_file
+name: train_random_forest
 conda_env: conda.yml
-
 entry_points:
   main:
     parameters:
-
       trainval_artifact:
-        description: Train dataset
         type: string
-
+        description: trainval artifact
       val_size:
-        description: Size of the validation split. Fraction of the dataset, or number of items
-        type: string
-
+        type: float
+        description: val size
       random_seed:
-        description: Seed for the random number generator. Use this for reproducibility
-        type: string
-        default: 42
-
+        type: int
+        description: random seed
       stratify_by:
-        description: Column to use for stratification (if any)
         type: string
-        default: 'none'
-
+        description: stratify by
       rf_config:
-        description: Random forest configuration. A path to a JSON file with the configuration that will
-                     be passed to the scikit-learn constructor for RandomForestRegressor.
         type: string
-
+        description: rf config
       max_tfidf_features:
-        description: Maximum number of words to consider for the TFIDF
-        type: string
-
+        type: int
+        description: max tfidf features
       output_artifact:
-        description: Name for the output artifact
         type: string
-
-    command: >-
-      python run.py --trainval_artifact {trainval_artifact} \
-                    --val_size {val_size} \
-                    --random_seed {random_seed} \
-                    --stratify_by {stratify_by} \
-                    --rf_config {rf_config} \
-                    --max_tfidf_features {max_tfidf_features} \
-                    --output_artifact {output_artifact}
+        description: output artifact
+    command: python run.py --trainval_artifact {trainval_artifact} --val_size {val_size}
+      --random_seed {random_seed} --stratify_by {stratify_by} --rf_config {rf_config}
+      --max_tfidf_features {max_tfidf_features} --output_artifact {output_artifact}
