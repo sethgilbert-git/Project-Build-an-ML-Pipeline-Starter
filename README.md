@@ -1,588 +1,187 @@
-# \# NYC Airbnb Rental-Price ML Pipeline
+# NYC Airbnb Rental-Price ML Pipeline
 
-# 
+GitHub repository: https://github.com/sethgilbert-git/Project-Build-an-ML-Pipeline-Starter
 
-# \*\*GitHub repository:\*\* https://github.com/sethgilbert-git/Project-Build-an-ML-Pipeline-Starter
+W&B project: https://wandb.ai/sethc-gilbert-western-governors-university/nyc_airbnb
 
-# 
+## Project Overview
 
-# \*\*W\&B project:\*\* https://wandb.ai/sethc-gilbert-western-governors-university/nyc\_airbnb
+This project estimates historical nightly Airbnb listing prices in New York City using a reusable machine learning pipeline.
 
-# 
+Hydra manages configuration, MLflow executes pipeline components and exports models, and Weights & Biases records experiments and artifact lineage.
 
-# \## Project Overview
+The pipeline downloads data, cleans it, validates it, creates training and test partitions, compares Random Forest models, and evaluates the validation-selected model on held-out test data.
 
-# 
+## Environment
 
-# This project estimates historical nightly Airbnb listing prices in New York City using a reusable machine learning pipeline.
+The project uses Python 3.12. Dependencies are specified in environment.yml and requirements.txt.
 
-# 
+Linux or Ubuntu through Windows Subsystem for Linux is recommended. The pipeline components use the active environment through the configured env_manager setting.
 
-# Hydra manages configuration, MLflow executes pipeline components and exports models, and Weights \& Biases tracks experiments, datasets, models, and artifact lineage.
+Detailed setup and execution instructions are available in SETUP_AND_SUBMIT.md.
 
-# 
+## Configuration
 
-# The pipeline performs the following steps:
+Pipeline parameters are stored in config.yaml, including:
 
-# 
+- Input sample and artifact references.
+- Minimum and maximum prices.
+- Geographic boundaries.
+- Data-distribution thresholds.
+- Train, validation, and test split settings.
+- Random seed.
+- Random Forest hyperparameters.
 
-# 1\. Fetch a raw data sample.
+The main.py orchestrator passes component parameters from this configuration.
 
-# 2\. Clean and preprocess the data.
+## Data Cleaning
 
-# 3\. Validate the cleaned dataset.
+The cleaning component retains listings priced between $10 and $350 per night and normalizes review dates.
 
-# 4\. Split the data into training, validation, and test sets.
+Version 1.0.1 adds geographic filtering using these inclusive boundaries:
 
-# 5\. Train and compare Random Forest models.
+- Longitude: -74.25 to -73.50.
+- Latitude: 40.5 to 41.2.
 
-# 6\. Select the model with the lowest validation mean absolute error.
+The first sample contains 20,000 raw records and 19,001 records after price filtering.
 
-# 7\. Evaluate the selected model on the held-out test set.
+The second sample contains one out-of-area record after price filtering. Geographic filtering removes that record, leaving 46,427 cleaned records.
 
-# 8\. Run versioned pipeline releases on a new data sample.
+## Exploratory Data Analysis
 
-# 
+The EDA notebook is located at src/eda/eda.ipynb.
 
-# \## Environment Setup
+It examines dataset structure, missing values, price distributions, prices by borough and room type, and listing locations.
 
-# 
+The W&B EDA run records the first sample's 20,000 rows, 16 columns, price distribution, and listing-location visualization.
 
-# The project uses Python 3.12 with dependencies specified in `environment.yml` and `requirements.txt`. Linux or Ubuntu through Windows Subsystem for Linux is recommended.
+## Data Validation
 
-# 
+The data-check component implements six tests:
 
-# Create and activate the environment:
+1. Expected column names and order.
+2. Expected borough names.
+3. Valid geographic boundaries.
+4. Borough-distribution similarity to the reference dataset.
+5. Dataset size greater than 15,000 and less than 1,000,000 rows.
+6. Prices within the configured range.
 
-# 
+The first cleaned sample has the reference artifact alias. This remains fixed while later samples update the latest alias.
 
-# ```bash
+## Artifacts and Lineage
 
-# conda env create -f environment.yml
+| Artifact | Producing component | Purpose |
+|---|---|---|
+| sample.csv | download_file | Versioned raw sample |
+| clean_sample.csv | basic_cleaning | Canonical cleaned dataset |
+| clean_data.csv | basic_cleaning | Additional cleaned artifact matching the alternate rubric name |
+| trainval_data.csv | train_val_test_split | Data used for training and validation |
+| test_data.csv | train_val_test_split | Held-out test data |
+| random_forest_export | train_random_forest | Complete MLflow sklearn inference pipeline |
+| test_metrics | test_model | Held-out evaluation and validation/test comparison |
 
-# conda activate nyc\_airbnb\_dev
+The random_forest_export collection contains artifacts of type model_export.
 
-# ```
+Components record input dependencies with run.use_artifact() and output artifacts with run.log_artifact(). These relationships can be inspected in W&B's Lineage or Graph view.
 
-# 
+## Dataset Splitting
 
-# Configure and authenticate W\&B:
+The first cleaned sample is split into trainval and test partitions. The trainval partition is subsequently divided into training and validation data.
 
-# 
+| Partition | Records |
+|---|---:|
+| Training | 12,160 |
+| Validation | 3,040 |
+| Test | 3,801 |
 
-# ```bash
+The splits use a fixed random seed and borough stratification. The test dataset is excluded from hyperparameter selection.
 
-# export WANDB\_ENTITY=sethc-gilbert-western-governors-university
+## Model and Preprocessing
 
-# export WANDB\_PROJECT=nyc\_airbnb
+The inference pipeline consists of a preprocessing step followed by a RandomForestRegressor.
 
-# wandb login
+Preprocessing includes:
 
-# ```
+- Ordinal encoding of room type.
+- Most-frequent imputation followed by one-hot encoding of borough.
+- Constant imputation of numeric features.
+- Review-age transformation using a reference date learned from training data.
+- Missing-title imputation and TF-IDF title features.
 
-# 
+Preprocessing is fitted only on training records. The review-date reference remains fixed during inference so a record's prediction does not depend on other records in its inference batch.
 
-# Enter the W\&B API key only in the terminal login prompt. Credentials are not included in the repository.
+The complete fitted pipeline is exported using MLflow's sklearn model format, including the custom feature-transformation code.
 
-# 
+## Hyperparameter Search
 
-# \## Pipeline Configuration
+The Hydra multirun search produced four completed training runs.
 
-# 
+| Maximum depth | Number of trees | Validation MAE |
+|---|---:|---:|
+| 10 | 100 | $34.5094 |
+| 10 | 200 | $34.4025 |
+| 50 | 100 | $34.3368 |
+| 50 | 200 | $34.2461 |
 
-# Pipeline parameters are defined in `config.yaml`, including:
+The model with the lowest validation MAE used a maximum depth of 50 and 200 trees.
 
-# 
+Its artifact, random_forest_export:v3, has the prod alias. The selected hyperparameters are recorded in config.yaml.
 
-# \- Input sample.
+The selection helper compares validation MAE among completed training runs. Test performance is not used to choose hyperparameters.
 
-# \- Accepted price range.
+## Held-Out Test Evaluation
 
-# \- Geographic boundaries.
+The selected first-sample model was evaluated on 3,801 held-out records.
 
-# \- Artifact names and references.
+| Metric | Result |
+|---|---:|
+| Validation MAE | $34.2461 |
+| Validation R² | 0.5509 |
+| Test MAE | $33.8417 |
+| Test R² | 0.5623 |
+| Absolute relative MAE gap | 1.18% |
 
-# \- Data-distribution threshold.
+The test evaluation recorded comparable=true because the relative MAE gap was below the configured 15% tolerance.
 
-# \- Train, validation, and test split settings.
+These results support comparable validation and test performance on these splits. They do not guarantee future-market accuracy or prove the absence of overfitting.
 
-# \- Random seed.
+## Versioned Pipeline Releases
 
-# \- Random Forest hyperparameters.
+Two pipeline releases are published in GitHub:
 
-# 
+- 1.0.0: Initial pipeline with price cleaning and geographic data validation.
+- 1.0.1: Updated pipeline that removes listings outside the configured NYC boundaries.
 
-# Component parameters are passed from configuration rather than hard-coded in the orchestrator.
+The geographic filter is absent from the original release and added in the second release.
 
-# 
+The release-verification procedure runs version 1.0.0 on sample2.csv to expose the out-of-area record through test_proper_boundaries, then runs version 1.0.1 to verify the correction.
 
-# The pipeline uses the active environment for its component runs through `env\_manager: local`.
+W&B records a completed training run on the corrected second sample. That run used 29,712 training records and 7,429 validation records, with validation MAE of $32.3596 and validation R² of 0.5796.
 
-# 
+The corrected second-sample model is a new candidate model. The prod alias remains on the validation-selected first-sample model associated with the reported held-out test evaluation.
 
-# \## Data Cleaning and Validation
+## Local Code Verification
 
-# 
+Code tests are located in the tests directory.
 
-# The cleaning component retains listings priced between $10 and $350 per night and converts review dates to datetime values.
+The local verification script also checks data validation, four model configurations, held-out evaluation, model serialization, and inference consistency.
 
-# 
+Local verification confirmed that the exported MLflow model reloads with matching predictions and can load in a fresh process outside the repository.
 
-# The geographic fix introduced in version 1.0.1 retains listings within these inclusive boundaries:
+Detailed local results are available in local_verification/metrics.json. Online experiment records are available in the linked W&B project.
 
-# 
+## Limitations and Future Improvements
 
-# \- Longitude: -74.25 to -73.50.
+The model applies to historical NYC listings within the configured $10–$350 price range and geographic boundaries.
 
-# \- Latitude: 40.5 to 41.2.
+Listing prices do not necessarily represent realized booking revenue. Seasonality, fees, amenities, and current demand are not fully represented.
 
-# 
+Future improvements could include temporal validation, richer property features, prediction intervals, drift monitoring, subgroup evaluation, and comparisons with alternative regression models.
 
-# The data-validation component checks:
+The held-out test dataset must remain excluded from hyperparameter selection.
 
-# 
+## Submission Links
 
-# 1\. Expected column names and order.
+GitHub: https://github.com/sethgilbert-git/Project-Build-an-ML-Pipeline-Starter
 
-# 2\. Expected borough names.
-
-# 3\. Valid geographic boundaries.
-
-# 4\. Borough-distribution similarity to a fixed reference dataset.
-
-# 5\. Dataset size greater than 15,000 and less than 1,000,000 rows.
-
-# 6\. Prices within the configured range.
-
-# 
-
-# The first cleaned sample is assigned the `reference` artifact alias. This reference remains fixed when subsequent samples update the `latest` alias.
-
-# 
-
-# \## Artifacts and Lineage
-
-# 
-
-# | Artifact | Producing component | Purpose |
-
-# |---|---|---|
-
-# | `sample.csv` | `download\_file` | Versioned raw sample. |
-
-# | `clean\_sample.csv` | `basic\_cleaning` | Canonical cleaned dataset. |
-
-# | `clean\_data.csv` | `basic\_cleaning` | Additional cleaned artifact matching the alternate rubric name. |
-
-# | `trainval\_data.csv` | `train\_val\_test\_split` | Data used for training and validation. |
-
-# | `test\_data.csv` | `train\_val\_test\_split` | Held-out test data. |
-
-# | `random\_forest\_export` | `train\_random\_forest` | Complete MLflow sklearn model, with artifact type `model\_export`. |
-
-# | `test\_metrics` | `test\_model` | Test metrics and validation/test comparison. |
-
-# 
-
-# The model collection is named `random\_forest\_export`, and its artifact type is `model\_export`.
-
-# 
-
-# The `reference` and `prod` labels are artifact aliases. Pipeline components record input and output dependencies using `run.use\_artifact()` and `run.log\_artifact()`, allowing their relationships to be inspected in W\&B’s Lineage or Graph view.
-
-# 
-
-# \## Exploratory Data Analysis
-
-# 
-
-# The EDA notebook is located at:
-
-# 
-
-# ```text
-
-# src/eda/eda.ipynb
-
-# ```
-
-# 
-
-# It examines dataset structure, missing values, price distributions, borough and room-type summaries, and listing locations.
-
-# 
-
-# Start JupyterLab with:
-
-# 
-
-# ```bash
-
-# jupyter-lab
-
-# ```
-
-# 
-
-# In normal submission mode, the notebook consumes `sample.csv:latest` from W\&B. Local verification mode uses the bundled first sample and explicitly identifies its outputs as local.
-
-# 
-
-# \## Model and Preprocessing
-
-# 
-
-# The inference pipeline contains a preprocessing step followed by a `RandomForestRegressor`.
-
-# 
-
-# Preprocessing includes:
-
-# 
-
-# \- Room-type ordinal encoding.
-
-# \- Most-frequent imputation and one-hot encoding for borough.
-
-# \- Constant imputation for numeric features.
-
-# \- Review-age transformation using a reference date learned from training data.
-
-# \- Missing-title imputation and TF-IDF title features.
-
-# 
-
-# Preprocessing is fitted only on training rows. The review-date transformation uses a fixed training reference so predictions do not depend on the composition of an inference batch.
-
-# 
-
-# The complete preprocessing and regression pipeline is exported in MLflow sklearn format, including the custom feature-transformation code.
-
-# 
-
-# \## Hyperparameter Search and Model Selection
-
-# 
-
-# The Hydra multirun search compares four configurations:
-
-# 
-
-# | Maximum depth | Number of trees |
-
-# |---|---:|
-
-# | 10 | 100 |
-
-# | 10 | 200 |
-
-# | 50 | 100 |
-
-# | 50 | 200 |
-
-# 
-
-# Run the search with:
-
-# 
-
-# ```bash
-
-# mlflow run . --env-manager local \\
-
-# &#x20; -P steps=train\_random\_forest \\
-
-# &#x20; -P hydra\_options="modeling.random\_forest.max\_depth=10,50 modeling.random\_forest.n\_estimators=100,200 -m"
-
-# ```
-
-# 
-
-# Training runs log validation MAE and R² to W\&B. Lower MAE indicates better performance.
-
-# 
-
-# The best model is selected using validation MAE rather than test performance. Its artifact receives the `prod` alias, and its hyperparameters become the defaults in `config.yaml`.
-
-# 
-
-# The selection helper can identify and promote the best model:
-
-# 
-
-# ```bash
-
-# python scripts/select\_best.py
-
-# python scripts/select\_best.py --promote
-
-# ```
-
-# 
-
-# \## Running the Pipeline
-
-# 
-
-# Detailed setup and submission instructions are provided in `SETUP\_AND\_SUBMIT.md`.
-
-# 
-
-# Prepare the initial version and publish the first sample:
-
-# 
-
-# ```bash
-
-# bash scripts/run\_stage.sh first-data
-
-# ```
-
-# 
-
-# Manually add the `reference` alias to the first `clean\_sample.csv` version in W\&B.
-
-# 
-
-# Run data checks, splitting, and the four-model search:
-
-# 
-
-# ```bash
-
-# bash scripts/run\_stage.sh train
-
-# ```
-
-# 
-
-# Promote the validation-selected model:
-
-# 
-
-# ```bash
-
-# python scripts/select\_best.py --promote
-
-# ```
-
-# 
-
-# Evaluate it against the held-out test dataset:
-
-# 
-
-# ```bash
-
-# bash scripts/run\_stage.sh test
-
-# ```
-
-# 
-
-# \## Local Verification Results
-
-# 
-
-# The following measurements were obtained during local verification. Account-specific experiment runs and artifacts can be inspected in the linked W\&B project.
-
-# 
-
-# The first sample contains 20,000 raw rows and 19,001 rows after price filtering.
-
-# 
-
-# | Partition | Rows |
-
-# |---|---:|
-
-# | Training | 12,160 |
-
-# | Validation | 3,040 |
-
-# | Test | 3,801 |
-
-# 
-
-# The best local configuration used a maximum depth of 50 and 200 trees.
-
-# 
-
-# | Metric | Result |
-
-# |---|---:|
-
-# | Validation MAE | $34.2461 |
-
-# | Validation R² | 0.5509 |
-
-# | Test MAE | $33.8417 |
-
-# | Test R² | 0.5623 |
-
-# | Absolute relative MAE gap | 1.18% |
-
-# 
-
-# The validation/test MAE gap is below the configured 15% comparison tolerance. This supports comparable performance on these splits, but does not guarantee future-market accuracy.
-
-# 
-
-# Local verification also confirmed that:
-
-# 
-
-# \- The MLflow model reloads with matching predictions.
-
-# \- The exported model loads in a fresh process outside the repository.
-
-# \- Predictions remain consistent across inference batch compositions.
-
-# \- The original cleaning behavior leaves one out-of-area row in the second sample.
-
-# \- The geographic boundary check detects that row.
-
-# \- After geographic filtering, all six data checks pass and 46,427 rows remain.
-
-# \- Training on the corrected second sample succeeds, with local validation MAE of $32.3596.
-
-# 
-
-# Detailed local results are recorded in `local\_verification/metrics.json`.
-
-# 
-
-# \## Code Tests
-
-# 
-
-# Run the code tests with:
-
-# 
-
-# ```bash
-
-# python -m pytest tests -v
-
-# ```
-
-# 
-
-# Run the more extensive local verification, including model comparison and export checks, with:
-
-# 
-
-# ```bash
-
-# python scripts/local\_verify.py
-
-# ```
-
-# 
-
-# Local verification does not substitute for the required online W\&B runs or published GitHub releases.
-
-# 
-
-# \## Versioned Releases and New-Sample Verification
-
-# 
-
-# The release sequence demonstrates detection and correction of an unexpected data issue.
-
-# 
-
-# \### Version 1.0.0
-
-# 
-
-# The original cleaning behavior filters prices without removing out-of-area coordinates.
-
-# 
-
-# Prepare this version with:
-
-# 
-
-# ```bash
-
-# python scripts/prepare\_release.py 1.0.0
-
-# ```
-
-# 
-
-# After committing, pushing, and publishing release `1.0.0`, run the remote release on the second sample:
-
-# 
-
-# ```bash
-
-# bash scripts/run\_stage.sh second-fail \\
-
-# &#x20; https://github.com/sethgilbert-git/Project-Build-an-ML-Pipeline-Starter.git
-
-# ```
-
-# 
-
-# The expected failure is `test\_proper\_boundaries`, caused by an out-of-area listing in `sample2.csv`.
-
-# 
-
-# \### Version 1.0.1
-
-# 
-
-# The updated cleaning behavior removes records outside the configured NYC boundaries.
-
-# 
-
-# Prepare this version with:
-
-# 
-
-# ```bash
-
-# python scripts/prepare\_release.py 1.0.1
-
-# ```
-
-# 
-
-# After committing, pushing, and publishing release `1.0.1`, run:
-
-# 
-
-# ```bash
-
-# bash scripts/run\_stage.sh second-pass \\
-
-# &#x20; https://github.com/sethgilbert-git/Project-Build-an-ML-Pipeline-Starter.git
-
-# ```
-
-# 
-
-# The corrected release is expected to pass the data checks and train a new model. Actual remote execution status should be verified in W\&B and the published versions in GitHub Releases.
-
-# 
-
-# \## Limitations and Future Improvements
-
-# 
-
-# The model applies to historical NYC listings within the configured $10–$350 price range. It does not cover luxury listings outside that range or properties outside the accepted area.
-
-# 
-
-# Listing prices do not necessarily represent realized booking revenue. Seasonality, fees, amenities, and current demand are not fully represented.
-
-# 
-
-# Future improvements could include temporal validation, richer property features, prediction intervals, drift monitoring, subgroup evaluation, and comparisons with alternative regression models.
-
-# 
-
-# The held-out test set must remain excluded from hyperparameter selection.
-
+Weights & Biases: https://wandb.ai/sethc-gilbert-western-governors-university/nyc_airbnb
