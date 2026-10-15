@@ -24,6 +24,11 @@ def clean_dataframe(df: pd.DataFrame, min_price: float, max_price: float,
     """
     df = df.loc[df["price"].between(min_price, max_price)].copy()
     df["last_review"] = pd.to_datetime(df["last_review"], errors="raise")
+    # NYC_FILTER_START: added in release 1.0.1 after sample2 fails its data check.
+    idx = (df["longitude"].between(min_longitude, max_longitude)
+           & df["latitude"].between(min_latitude, max_latitude))
+    df = df.loc[idx].copy()
+    # NYC_FILTER_END
     return df
 
 
