@@ -16,7 +16,7 @@ The pipeline downloads data, cleans it, validates it, creates training and test 
 
 The project uses Python 3.12. Dependencies are specified in environment.yml and requirements.txt.
 
-Linux or Ubuntu through Windows Subsystem for Linux is recommended. The pipeline components use the active environment through the configured env_manager setting.
+Linux or Ubuntu through Windows Subsystem for Linux is recommended. Pipeline components use the active environment through the configured env_manager setting.
 
 Detailed setup and execution instructions are available in SETUP_AND_SUBMIT.md.
 
@@ -33,6 +33,11 @@ Pipeline parameters are stored in config.yaml, including:
 - Random Forest hyperparameters.
 
 The main.py orchestrator passes component parameters from this configuration.
+
+The current model artifact settings are:
+
+- model_name: model_export
+- production_model: model_export:prod
 
 ## Data Cleaning
 
@@ -77,10 +82,12 @@ The first cleaned sample has the reference artifact alias. This remains fixed wh
 | clean_data.csv | basic_cleaning | Additional cleaned artifact matching the alternate rubric name |
 | trainval_data.csv | train_val_test_split | Data used for training and validation |
 | test_data.csv | train_val_test_split | Held-out test data |
-| random_forest_export | train_random_forest | Complete MLflow sklearn inference pipeline |
+| model_export | train_random_forest | Complete MLflow sklearn inference pipeline |
 | test_metrics | test_model | Held-out evaluation and validation/test comparison |
 
-The random_forest_export collection contains artifacts of type model_export.
+The current model artifact collection is named model_export, and its artifact type is also model_export. It contains the serialized MLflow sklearn model and associated model files.
+
+Earlier experiments used the collection name random_forest_export. Those artifacts remain available as historical experiment records.
 
 Components record input dependencies with run.use_artifact() and output artifacts with run.log_artifact(). These relationships can be inspected in W&B's Lineage or Graph view.
 
@@ -114,7 +121,7 @@ The complete fitted pipeline is exported using MLflow's sklearn model format, in
 
 ## Hyperparameter Search
 
-The Hydra multirun search produced four completed training runs.
+The Hydra multirun search produced four completed training runs on the first sample.
 
 | Maximum depth | Number of trees | Validation MAE |
 |---|---:|---:|
@@ -125,11 +132,11 @@ The Hydra multirun search produced four completed training runs.
 
 The model with the lowest validation MAE used a maximum depth of 50 and 200 trees.
 
-Its artifact, random_forest_export:v3, has the prod alias. The selected hyperparameters are recorded in config.yaml.
+The original selected artifact was random_forest_export:v3. It received the prod alias in the historical collection. The selected hyperparameters are recorded in config.yaml.
 
 The selection helper compares validation MAE among completed training runs. Test performance is not used to choose hyperparameters.
 
-## Held-Out Test Evaluation
+## Historical First-Sample Held-Out Evaluation
 
 The selected first-sample model was evaluated on 3,801 held-out records.
 
@@ -143,7 +150,9 @@ The selected first-sample model was evaluated on 3,801 held-out records.
 
 The test evaluation recorded comparable=true because the relative MAE gap was below the configured 15% tolerance.
 
-These results support comparable validation and test performance on these splits. They do not guarantee future-market accuracy or prove the absence of overfitting.
+These results belong to the original first-sample model. They are not presented as test results for the subsequently trained second-sample model.
+
+The results support comparable validation and test performance on these splits. They do not guarantee future-market accuracy or prove the absence of overfitting.
 
 ## Versioned Pipeline Releases
 
@@ -154,15 +163,36 @@ Two pipeline releases are published in GitHub:
 
 The geographic filter is absent from the original release and added in the second release.
 
-The release-verification procedure runs version 1.0.0 on sample2.csv to expose the out-of-area record through test_proper_boundaries, then runs version 1.0.1 to verify the correction.
+Running release 1.0.0 on sample2.csv produced the expected test_proper_boundaries failure. The result was one failed data test and five passed tests.
 
-W&B records a completed training run on the corrected second sample. That run used 29,712 training records and 7,429 validation records, with validation MAE of $32.3596 and validation R² of 0.5796.
+After geographic filtering was added, running release 1.0.1 on sample2.csv passed all six data checks and completed model training successfully.
 
-The corrected second-sample model is a new candidate model. The prod alias remains on the validation-selected first-sample model associated with the reported held-out test evaluation.
+The subsequent artifact-name correction updates the current configuration to publish models under model_export. The earlier release tags preserve their original code and configuration.
+
+## Corrected Model Artifact Name and Retraining
+
+To address the artifact-naming requirement, model_name was changed to model_export and production_model was changed to model_export:prod in config.yaml.
+
+The training step was rerun successfully on the corrected second sample and published a model_export artifact containing the MLflow sklearn inference pipeline.
+
+The W&B training run is:
+
+https://wandb.ai/sethc-gilbert-western-governors-university/nyc_airbnb/runs/v03epxts
+
+| Metric | Result |
+|---|---:|
+| Training records | 29,712 |
+| Validation records | 7,429 |
+| Validation MAE | $32.3596 |
+| Validation R² | 0.5796 |
+
+Both the training component and its parent MLflow run completed successfully.
+
+These are validation results for the second-sample model. The historical first-sample test metrics are documented separately above.
 
 ## Local Code Verification
 
-Code tests are located in the tests directory.
+Code tests are located in the tests directory. All eight code tests passed after the geographic fix.
 
 The local verification script also checks data validation, four model configurations, held-out evaluation, model serialization, and inference consistency.
 
