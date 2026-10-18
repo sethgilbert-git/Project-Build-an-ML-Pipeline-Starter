@@ -210,6 +210,16 @@ Future improvements could include temporal validation, richer property features,
 
 The held-out test dataset must remain excluded from hyperparameter selection.
 
+## Updated Screenshots for Resubmission
+
+These screenshots replace the evidence previously submitted for Q6 and Q17 and show my own W&B account.
+
+### Q6 — Reference Alias
+![Reference alias in my W&B account](images/Q6_reference_alias_own_account.png)
+
+### Q17 — Pipeline Graph
+![Pipeline graph in my W&B account](images/Q17_pipeline_graph_own_account.png)
+
 ## Submission Links
 
 GitHub: https://github.com/sethgilbert-git/Project-Build-an-ML-Pipeline-Starter
